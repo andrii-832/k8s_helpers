@@ -28,7 +28,7 @@ find_pod_id() {
 process_pod() {
   local command=$1
   local namespace=${2:-default}
-  local  pod_id=$3
+  local pod_id=$3
   kubectl -n $namespace $command pods/$pod_id
 }
 
@@ -38,23 +38,23 @@ grep_pod_id() {
 
   local pod_id=$(find_pod_id $namespace $query)
   local num_of_ids=$(echo $pod_id | wc -w)
-    
-  if (( $num_of_ids > 1 )); then
-    echo Multiple pods found 
+
+  if (($num_of_ids > 1)); then
+    echo Multiple pods found
     echo Enter p od index to select
-    
-    while : ; do
+
+    while :; do
       local idx=0
       while read line; do
-	idx=$((idx+1))
-	echo "$idx) $line"
-      done <<< "$pod_id"
+        idx=$((idx + 1))
+        echo "$idx) $line"
+      done <<<"$pod_id"
 
       read idx
 
-      if (( idx >= 1 && idx <= $num_of_ids )); then
-        pod_id=$(echo "$pod_id" | sed -n "${idx}p")	      
-	break	
+      if ((idx >= 1 && idx <= $num_of_ids)); then
+        pod_id=$(echo "$pod_id" | sed -n "${idx}p")
+        break
       fi
 
       echo "You entered invalid choise, please try again"
@@ -94,22 +94,24 @@ exec_pod_grep() {
   grep_pod_id $namespace $query
 
   if [ -n $POD_ID ]; then
-    kubectl -n $namespace exec -it $POD_ID  -- $command
+    kubectl -n $namespace exec -it $POD_ID -- $command
   fi
 }
 
-
-alias kspi="find_pod_id kube-system"
-
+# system pods by id
 alias ksdpi="process_pod describe kube-system"
 alias kslpi="process_pod logs kube-system"
 
-alias kse="exec_pod_grep kube-system"
+# get system pod id
+alias kspi="find_pod_id kube-system"
+# get system pods
 alias ksp="kubectl -n kube-system get pods"
 
-alias kip="get_pod_info_grep default"
-
+# system pods grep
 alias ksip="get_pod_info_grep kube-system"
 alias ksdp="process_pod_grep describe kube-system"
 alias kslp="process_pod_grep logs kube-system"
+alias ksep="exec_pod_grep kube-system"
 
+# get pod info grep
+alias kip="get_pod_info_grep default"
