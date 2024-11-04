@@ -1,33 +1,16 @@
 #!/bin/bash
 
-alias k="kubectl"
-alias kn="kubectl -n beta"
-alias kp="kubectl get pods -A"
-alias knp="kubectl get pods -n beta"
-
-alias ks="kubectl get svc -A"
-alias kns="kubectl get svc -n beta"
-
-alias kl="kubectl logs"
-alias kd="kubectl describe"
-alias kln="kubectl -n beta logs"
-alias kdn="kubectl -n beta describe"
-
-alias ks="kubectl -n kube-system"
-alias ksd="kubectl -n kube-system describe"
-alias ksl="kubectl -n kube-system logs"
-
 POD_ID=""
 
 find_pod_id() {
-  local namespace=${1:-default}
+  local namespace=$1
   local query=$2
   kubectl -n $namespace get pods | grep $query | cut -d ' ' -f1
 }
 
 process_pod() {
   local command=$1
-  local namespace=${2:-default}
+  local namespace=$2
   local pod_id=$3
   kubectl -n $namespace $command pods/$pod_id
 }
@@ -75,6 +58,12 @@ process_pod_grep() {
   fi
 }
 
+get_pod_info() {
+  local namespace=${1:-default}
+  local POD_ID=$2
+  kubectl -n $namespace get pods/$POD_ID -o yaml
+}
+
 get_pod_info_grep() {
   local namespace=${1:-default}
   local query=$2
@@ -82,8 +71,15 @@ get_pod_info_grep() {
   grep_pod_id $namespace $query
 
   if [ -n $POD_ID ]; then
-    kubectl -n $namespace get pods/$POD_ID -o yaml
+    get_pod_info $namespace $POD_ID
   fi
+}
+
+exec_pod() {
+  local namespace=${1:-default}
+  local POD_ID=$2
+  local command=${3:-/bin/sh}
+  kubectl -n $namespace exec -it $POD_ID -- $command
 }
 
 exec_pod_grep() {
@@ -94,24 +90,47 @@ exec_pod_grep() {
   grep_pod_id $namespace $query
 
   if [ -n $POD_ID ]; then
-    kubectl -n $namespace exec -it $POD_ID -- $command
+    # kubectl -n $namespace exec -it $POD_ID -- $command
+    exec_pod $namespace $POD_ID $command
   fi
 }
 
-# system pods by id
-alias ksdpi="process_pod describe kube-system"
-alias kslpi="process_pod logs kube-system"
+alias k="kubectl"
+alias kn="kubectl -n $K8S_NAMESPASE"
+alias ks="kubectl -n kube-system"
 
-# get system pod id
-alias kspi="find_pod_id kube-system"
-# get system pods
-alias ksp="kubectl -n kube-system get pods"
+alias kpa="k get pods -A"
+alias knp="kn get pods"
+alias ksp="ks get pods"
 
-# system pods grep
-alias ksip="get_pod_info_grep kube-system"
-alias ksdp="process_pod_grep describe kube-system"
-alias kslp="process_pod_grep logs kube-system"
-alias ksep="exec_pod_grep kube-system"
+alias ksa="k get svc -A"
+alias kns="kn get svc"
+alias kss="ks get svc"
 
-# get pod info grep
-alias kip="get_pod_info_grep default"
+# get pod id
+alias kspg="find_pod_id kube-system"
+alias knpg="find_pod_id $K8S_NAMESPASE"
+
+# describe pod
+alias kndp="process_pod describe $K8S_NAMESPASE"
+alias ksdp="process_pod describe kube-system"
+alias ksdpg="process_pod_grep describe kube-system"
+alias kndpg="process_pod_grep describe $K8S_NAMESPASE"
+
+# logs pod
+alias knlp="process_pod logs $K8S_NAMESPASE"
+alias kslp="process_pod logs kube-system"
+alias kslpg="process_pod_grep logs kube-system"
+alias knlpg="process_pod_grep logs $K8S_NAMESPASE"
+
+# info pod grep
+alias ksip="get_pod_info kube-system"
+alias knip="get_pod_info $K8S_NAMESPASE"
+alias ksipg="get_pod_info_grep kube-system"
+alias knipg="get_pod_info_grep $K8S_NAMESPASE"
+
+# exec pod grep
+alias ksep="exec_pod kube-system"
+alias knep="exec_pod $K8S_NAMESPASE"
+alias ksepg="exec_pod_grep kube-system"
+alias knepg="exec_pod_grep $K8S_NAMESPASE"
